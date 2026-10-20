@@ -1,4 +1,4 @@
-import {Migration} from "./types.js"
+import {Logger, Migration} from "./types.js"
 
 const indexNotMatch = (migration: Migration, index: number) =>
   migration.id !== index
@@ -17,6 +17,7 @@ export function validateMigrationOrdering(migrations: Array<Migration>) {
 export function validateMigrationHashes(
   migrations: Array<Migration>,
   appliedMigrations: Record<number, Migration | undefined>,
+  log: Logger,
 ) {
   const invalidHash = (migration: Migration) => {
     const appliedMigration = appliedMigrations[migration.id]
@@ -28,6 +29,14 @@ export function validateMigrationHashes(
   if (invalidHashes.length > 0) {
     // Someone has altered one or more migrations which has already run - gasp!
     const invalidFiles = invalidHashes.map(({fileName}) => fileName)
+    for (const invalidMigration of invalidHashes) {
+      const appliedMigration = appliedMigrations[invalidMigration.id]
+      if (appliedMigration != null) {
+        log(
+          ` - migration ${invalidMigration.fileName}: expected hash ${appliedMigration.hash}, saw ${invalidMigration.hash}`,
+        )
+      }
+    }
     throw new Error(`Hashes don't match for migrations '${invalidFiles}'.
 This means that the scripts have changed since it was applied.`)
   }

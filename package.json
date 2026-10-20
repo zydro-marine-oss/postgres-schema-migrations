@@ -1,5 +1,5 @@
 {
-  "name": "postgres-schema-migrations",
+  "name": "@zydro/postgres-schema-migrations",
   "version": "7.0.2",
   "description": "Database migrations for PostgreSQL",
   "type": "module",
@@ -21,14 +21,14 @@
     "database",
     "db"
   ],
-  "homepage": "https://github.com/zakpatterson/postgres-schema-migrations#readme",
+  "homepage": "https://github.com/zydro-marine-oss/postgres-schema-migrations#readme",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git@github.com:zakpatterson/postgres-schema-migrations.git"
+    "url": "git@github.com:zydro-marine-oss/postgres-schema-migrations.git"
   },
   "bugs": {
-    "url": "https://github.com/zakpatterson/postgres-schema-migrations/issues"
+    "url": "https://github.com/zydro-marine-oss/postgres-schema-migrations/issues"
   },
   "engines": {
     "node": ">10.17.0"
@@ -72,5 +72,6 @@
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.55.0"
-  }
+  },
+  "packageManager": "pnpm@12.14.0+sha512.c18ba6d87993d3d164cb5e8948f32b2c06ee854487e06cd8d86781342fb3e5bb4634367034711e86802baa9c37bea906ce1929ad08d70884c97d801df13389a6"
 }

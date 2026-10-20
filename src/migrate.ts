@@ -140,7 +140,7 @@ function runMigrations(
         log,
       )
 
-      validateMigrationHashes(intendedMigrations, appliedMigrations)
+      validateMigrationHashes(intendedMigrations, appliedMigrations, log)
 
       const migrationsToRun = filterMigrations(
         intendedMigrations,
