@@ -72,6 +72,40 @@ test("concurrent migrations - index concurrently", async (t) => {
   t.truthy(exists)
 })
 
+test("disable-transaction splits multi-statement files for CONCURRENTLY", async (t) => {
+  const databaseName = "migration-test-concurrent-multi-statement"
+  const dbConfig: MigrateDBConfig = {
+    database: databaseName,
+    user: "postgres",
+    password: PASSWORD,
+    host: "localhost",
+    port,
+    ensureDatabaseExists: true,
+  }
+
+  await migrate(dbConfig, "src/__tests__/fixtures/concurrent-index-multi")
+
+  const client = new pg.Client({
+    database: databaseName,
+    user: "postgres",
+    password: PASSWORD,
+    host: "localhost",
+    port,
+  })
+  await client.connect()
+  try {
+    const result = await client.query(`
+      SELECT 1
+      FROM pg_indexes
+      WHERE schemaname = 'public'
+        AND indexname = 'concurrent_multi_label_idx'
+    `)
+    t.is(result.rowCount, 1)
+  } finally {
+    await client.end()
+  }
+})
+
 // can't test with unconnected client because `pg` just hangs on the first query...
 test("with connected client", async (t) => {
   const databaseName = "migration-test-with-connected-client"

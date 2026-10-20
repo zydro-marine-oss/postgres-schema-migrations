@@ -1,6 +1,6 @@
 {
   "name": "@zydro/postgres-schema-migrations",
-  "version": "7.0.2",
+  "version": "7.0.3",
   "description": "Database migrations for PostgreSQL",
   "type": "module",
   "main": "dist/index.js",

@@ -1,6 +1,7 @@
 import sqlModule from "sql-template-strings"
 const SQL = sqlModule.default ?? sqlModule
 import {Logger, Migration, BasicPgClient} from "./types.js"
+import {splitSqlStatements} from "./split-sql-statements.js"
 
 const noop = (): void => {
   //
@@ -27,6 +28,28 @@ const insertMigration = async (
   return client.query(sql)
 }
 
+const runMigrationSql = async (
+  client: BasicPgClient,
+  sql: string,
+  inTransaction: boolean,
+  log: Logger,
+) => {
+  if (inTransaction) {
+    await client.query(sql)
+    return
+  }
+
+  const statements = splitSqlStatements(sql)
+  if (statements.length > 1) {
+    log(
+      `Running ${statements.length} statements outside a transaction (split to avoid implicit transaction)`,
+    )
+  }
+  for (const statement of statements) {
+    await client.query(statement)
+  }
+}
+
 export const runMigration =
   (migrationTableName: string, client: BasicPgClient, log: Logger = noop) =>
   async (migration: Migration) => {
@@ -46,11 +69,11 @@ export const runMigration =
 
     try {
       await begin()
-      await client.query(migration.sql)
+      await runMigrationSql(client, migration.sql, inTransaction, log)
       log("Ran migration " + migration.fileName)
       await insertMigration(migrationTableName, client, migration, log)
       log("inserted migration in migrations table" + migrationTableName)
-      end()
+      await end()
 
       return migration
     } catch (err: unknown) {

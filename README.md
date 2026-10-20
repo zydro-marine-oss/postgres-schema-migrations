@@ -135,6 +135,8 @@ Running in a transaction ensures each migration is atomic. Either it completes s
 
 An exception is made when `-- postgres-migrations disable-transaction` is included at the top of the migration file. This allows migrations such as `CREATE INDEX CONCURRENTLY` which cannot be run inside a transaction.
 
+When that directive is present, the file is also split on statement boundaries and each statement is executed as its own query. Postgres still wraps multi-statement simple queries in an implicit transaction, which would otherwise reject `CREATE INDEX CONCURRENTLY` even without an explicit `BEGIN`/`COMMIT`.
+
 ### Abort on errors
 
 If anything fails, the migration in progress is rolled back and an exception is thrown.
@@ -292,12 +294,13 @@ Creating an index should probably look like this:
 
 ```sql
 -- postgres-migrations disable-transaction
+ALTER TABLE table_name ADD COLUMN IF NOT EXISTS column_name text;
 CREATE INDEX CONCURRENTLY IF NOT EXISTS name_of_idx
   ON table_name (column_name);
 ```
 
 - `CONCURRENTLY` - without this, writes on the table will block until the index has finished being created. However, it can't be run inside a transaction.
-- `-- postgres-migrations disable-transaction` - migrations are run inside a transaction by default. This disables that.
+- `-- postgres-migrations disable-transaction` - migrations are run inside a transaction by default. This disables that, and splits the file so each statement runs as its own query (required for `CONCURRENTLY` in a multi-statement file).
 - `IF NOT EXISTS` - since the transaction is disabled, it's possible to end up in a partially applied state where the index exists but the migration wasn't recorded. In this case, the migration will probably get run again. This ensures that will succeed.
 
 See the [Postgres docs on creating indexes](https://www.postgresql.org/docs/9.6/sql-createindex.html).

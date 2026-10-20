@@ -131,7 +131,11 @@ test("does not run the migration in a transaction when instructed", async (t) =>
   await run(migration).then(() => {
     t.is(query.callCount, 2)
 
-    t.is(query.firstCall.args[0], migration.sql, "should run the migration")
+    t.is(
+      query.firstCall.args[0],
+      migration.sql.trim().replace(/;$/, ""),
+      "should run the migration statement without an enclosing transaction",
+    )
 
     t.deepEqual(
       query.secondCall.args[0].values,
@@ -139,6 +143,35 @@ test("does not run the migration in a transaction when instructed", async (t) =>
       "should record the running of the migration in the database",
     )
   })
+})
+
+test("splits disable-transaction migrations into separate queries", async (t) => {
+  const query = sinon.stub().resolves()
+  const run = runMigration(migrationTableName, {query})
+
+  const migration = buildMigration(`-- postgres-migrations disable-transaction
+alter table t add column if not exists x int;
+create index concurrently if not exists t_x_idx on t (x);
+`)
+
+  await run(migration)
+
+  t.is(query.callCount, 3)
+  t.is(
+    query.firstCall.args[0],
+    "-- postgres-migrations disable-transaction\nalter table t add column if not exists x int",
+  )
+  t.is(
+    query.secondCall.args[0],
+    "create index concurrently if not exists t_x_idx on t (x)",
+  )
+  t.deepEqual(query.thirdCall.args[0].values, [
+    migration.id,
+    migration.name,
+    migration.hash,
+  ])
+  sinon.assert.neverCalledWith(query, "START TRANSACTION")
+  sinon.assert.neverCalledWith(query, "COMMIT")
 })
 
 test("does not roll back when there is an error inside a transactiony migration", async (t) => {

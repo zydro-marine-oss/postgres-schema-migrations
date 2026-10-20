@@ -1,5 +1,10 @@
 # Changelog
 
+## 7.0.3
+
+- When `-- postgres-migrations disable-transaction` is set, split the migration SQL on statement boundaries and run each statement as its own query. This allows multi-statement files that include `CREATE INDEX CONCURRENTLY` (Postgres rejects CONCURRENTLY inside the implicit transaction used for multi-statement simple queries).
+- Await `COMMIT` after transactional migrations.
+
 ## 7.0.0
 
 - schema migrations were added
